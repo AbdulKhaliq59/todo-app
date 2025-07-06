@@ -45,6 +45,16 @@ class TodoModel extends Equatable {
     );
   }
 
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'isDone': isDone ? 1 : 0,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
