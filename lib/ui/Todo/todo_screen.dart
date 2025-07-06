@@ -17,7 +17,12 @@ class _TodoScreenState extends State<TodoScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<TodoViewmodel>().loadTodos());
+    // Use WidgetsBinding to ensure context is available and avoid async gap issues
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<TodoViewmodel>().loadTodos();
+      }
+    });
   }
 
   @override
@@ -39,7 +44,7 @@ class _TodoScreenState extends State<TodoScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) { 
     final viewModel = context.watch<TodoViewmodel>();
 
     return Scaffold(
