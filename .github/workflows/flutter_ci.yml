@@ -1,9 +1,9 @@
 name: Flutter CI
 
 on:
- pull_request:
+  pull_request:
     branches: [main]
- push:
+  push:
     branches: [main]
 
 jobs:
@@ -20,19 +20,44 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
-      
+
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      - name: Convert lcov to coverage summary
+        run: |
+          sudo apt-get update && sudo apt-get install -y lcov
+          genhtml coverage/lcov.info --output-directory coverage/html
+          lcov --summary coverage/lcov.info
+
+      - name: Check coverage percentage
+        id: coverage
+        run: |
+          COVERAGE=$(lcov --summary coverage/lcov.info | grep -Po 'lines\.+: \K[0-9]+(?=\.\d+%\s+\()')
+          echo "Coverage: $COVERAGE%"
+          if [ "$COVERAGE" -lt 80 ]; then
+            echo "Test coverage ($COVERAGE%) is below 80%. PR cannot be merged."
+            exit 1
+          fi
+          echo "Test coverage is $COVERAGE% (>= 80%)"
+
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/html
+
       - name: Analyze
         run: flutter analyze
-      
+
       - name: Run tests
         run: flutter test
 
-      - name : Build APK
+      - name: Build APK
         run: flutter build apk --debug
-      
+
       - name: Upload APK to Github release
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           files: build/app/outputs/flutter-apk/app-debug.apk
-    
